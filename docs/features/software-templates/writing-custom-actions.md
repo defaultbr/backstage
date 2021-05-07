@@ -134,28 +134,46 @@ return await createRouter({
 want to have those as well as your new one, you'll need to do the following:
 
 ```ts
-import { createBuiltinActions } from '@backstage/plugin-scaffolder-backend';
++ import { createBuiltinActions } from '@backstage/plugin-scaffolder-backend';
++ import { createNewFileAction } from "./scaffolder/actions/custom"
++ import { ScmIntegrations } from '@backstage/integration';
 
-const builtInActions = createBuiltinActions({
-  integrations,
-  catalogClient,
-  templaters,
-  reader,
-});
+...
+...
 
-const actions = [...builtInActions, createNewFileAction()];
-
-return await createRouter({
-  preparers,
-  templaters,
-  publishers,
+export default async function createPlugin({
   logger,
   config,
   database,
-  catalogClient,
   reader,
-  actions,
-});
+}: PluginEnvironment): Promise<Router> {
+
+  ...
+  ...
+
+  + const integrations = ScmIntegrations.fromConfig(config);
+
+  + const builtInActions = createBuiltinActions({
+  +   integrations,
+  +   catalogClient,
+  +   templaters,
+  +   reader,
+  + });
+  + const actions = [...builtInActions,createNewFileAction()];
+
+  return await createRouter({
+    preparers,
+    templaters,
+    publishers,
+    logger,
+    config,
+    database,
+    catalogClient,
+    reader,
+    + actions
+  });
 ```
+
+Open localhost:3000/create/actions and see all built-in actions and your action at the end 
 
 Have fun! 🚀
