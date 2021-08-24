@@ -40,7 +40,6 @@ import {
   Link,
 } from '@backstage/core-components';
 import { useApi, useRouteRef, configApiRef } from '@backstage/core-plugin-api';
-import { Chunk } from 'webpack';
 
 const useStyles = makeStyles((theme: BackstageTheme) => ({
   organizationNode: {
@@ -53,13 +52,13 @@ const useStyles = makeStyles((theme: BackstageTheme) => ({
   },
 }));
 
-const textFontSize: number = 15;
-const nodeWidth: number = 180;
-const nodeHeight: number = 90;
-const nodeCornerRadius: number = 20;
-const middleAlignmentShift: number = 5;
-const maxWordsPerRow: number = 3;
-const maxLinesPerNode: number = 3;
+const TEXT_FONT_SIZE: number = 15;
+const NODE_WIDTH: number = 180;
+const NODE_HEIGHT: number = 90;
+const NODE_CORNER_RADIUS: number = 20;
+const NODE_MIDDLE_ALIGNMENT_SHIFT: number = 5;
+const NODE_MAX_WORDS_PER_ROW: number = 3;
+const NODE_MAX_LINES: number = 3;
 
 function RenderNode(props: DependencyGraphTypes.RenderNodeProps<any>) {
   const classes = useStyles();
@@ -69,15 +68,15 @@ function RenderNode(props: DependencyGraphTypes.RenderNodeProps<any>) {
     return (
       <g>
         <rect
-          width={nodeWidth}
-          height={nodeHeight}
-          rx={nodeCornerRadius}
+          width={NODE_WIDTH}
+          height={NODE_HEIGHT}
+          rx={NODE_CORNER_RADIUS}
           className={classes.organizationNode}
         />
         <title>{props.node.name}</title>
         <text
-          x={nodeWidth / 2}
-          y={nodeHeight / 2 + middleAlignmentShift}
+          x={NODE_WIDTH / 2}
+          y={NODE_HEIGHT / 2 + NODE_MIDDLE_ALIGNMENT_SHIFT}
           textAnchor="middle"
           alignmentBaseline="baseline"
           style={{ fontWeight: 'bold' }}
@@ -95,9 +94,9 @@ function RenderNode(props: DependencyGraphTypes.RenderNodeProps<any>) {
   return (
     <g>
       <rect
-        width={nodeWidth}
-        height={nodeHeight}
-        rx={nodeCornerRadius}
+        width={NODE_WIDTH}
+        height={NODE_HEIGHT}
+        rx={NODE_CORNER_RADIUS}
         className={classes.groupNode}
       />
       <title>{props.node.name}</title>
@@ -110,16 +109,17 @@ function RenderNode(props: DependencyGraphTypes.RenderNodeProps<any>) {
         })}
       >
         <text
-          x={nodeWidth / 2}
-          y={nodeHeight / 2 + middleAlignmentShift}
+          x={NODE_WIDTH / 2}
+          y={NODE_HEIGHT / 2 + NODE_MIDDLE_ALIGNMENT_SHIFT}
           textAnchor="middle"
           alignmentBaseline="baseline"
-          style={{ fontWeight: 'bold', fontSize: textFontSize }}
+          style={{ fontWeight: 'bold', fontSize: TEXT_FONT_SIZE }}
         >
           {objs.map(function (object: any, i: number) {
             return (
               <tspan
-                y={nodeHeight / 2 + middleAlignmentShift}
+                key={i}
+                y={NODE_HEIGHT / 2 + NODE_MIDDLE_ALIGNMENT_SHIFT}
                 x="90"
                 textAnchor="middle"
                 dy={object.dy}
@@ -135,42 +135,42 @@ function RenderNode(props: DependencyGraphTypes.RenderNodeProps<any>) {
 }
 
 /**
- *
+ * Join chunks based on max words per line and add dy position shifting
  * @param chunkedArray
  * @returns
  */
 function prepareForDisplay(chunkedArray: any): any {
   return chunkedArray.map((val: Array<string>, pos: number) => {
     const text = val.join(' ');
-
-    // If array length == 1, dy should be 0 since there is no need to handle the blocks inside the node
+    // If array length == 1, dy should be 0 since there is no need to divide the node into blocks, we just need to centralize it
     const dy = chunkedArray.length === 1 ? 0 : getDy(pos) - 30;
-    return { dy: dy, text: `${text}` };
+    return { dy: dy, text: text };
   });
 }
 
 /**
  * text svg dy shifting based on array pos and in the blocks inside the node
+ * @param i text position on the array
  */
 function getDy(i: number) {
-  const blocksSize = nodeHeight / maxLinesPerNode;
-  const position = 0 + blocksSize * i;
+  const blocksSize = NODE_HEIGHT / NODE_MAX_LINES;
+  const position = blocksSize * i;
   return position;
 }
 
 /**
- * Create Chunked name based on maxLinesPerNode and maxWordsPerRow
+ * Create Chunked name based on NODE_MAX_LINES and NODE_MAX_WORDS_PER_ROW
  * @param name from props.node.name
  * @returns
  */
 function splitNameInChunks(name: string) {
   const array = name.split(' ');
   const formated = array
-    .slice(0, maxLinesPerNode * maxWordsPerRow)
+    .slice(0, NODE_MAX_LINES * NODE_MAX_WORDS_PER_ROW)
     .map((it, pos) =>
-      pos + 1 === maxLinesPerNode * maxWordsPerRow ? `${it}...` : it,
+      pos + 1 === NODE_MAX_LINES * NODE_MAX_WORDS_PER_ROW ? `${it}...` : it,
     );
-  const chunked = chunkArray(formated, maxWordsPerRow);
+  const chunked = chunkArray(formated, NODE_MAX_WORDS_PER_ROW);
   return chunked;
 }
 
