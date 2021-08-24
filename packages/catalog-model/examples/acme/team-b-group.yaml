@@ -6,7 +6,7 @@ metadata:
 spec:
   type: team
   profile:
-    displayName: Team B
+    displayName: Very Long Team Name More than Six Words Name1 Name2 Name3 Name4 Name5
     email: team-b@example.com
     picture: https://avatars.dicebear.com/api/identicon/team-b@example.com.svg?background=%23fff&margin=25
   parent: backstage

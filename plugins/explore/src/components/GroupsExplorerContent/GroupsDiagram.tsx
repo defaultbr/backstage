@@ -40,6 +40,7 @@ import {
   Link,
 } from '@backstage/core-components';
 import { useApi, useRouteRef, configApiRef } from '@backstage/core-plugin-api';
+import { Chunk } from 'webpack';
 
 const useStyles = makeStyles((theme: BackstageTheme) => ({
   organizationNode: {
@@ -52,6 +53,14 @@ const useStyles = makeStyles((theme: BackstageTheme) => ({
   },
 }));
 
+const textFontSize: number = 15;
+const nodeWidth: number = 180;
+const nodeHeight: number = 90;
+const nodeCornerRadius: number = 20;
+const middleAlignmentShift: number = 5;
+const maxWordsPerRow: number = 3;
+const maxLinesPerNode: number = 3;
+
 function RenderNode(props: DependencyGraphTypes.RenderNodeProps<any>) {
   const classes = useStyles();
   const catalogEntityRoute = useRouteRef(entityRouteRef);
@@ -60,14 +69,15 @@ function RenderNode(props: DependencyGraphTypes.RenderNodeProps<any>) {
     return (
       <g>
         <rect
-          width={180}
-          height={80}
-          rx={20}
+          width={nodeWidth}
+          height={nodeHeight}
+          rx={nodeCornerRadius}
           className={classes.organizationNode}
         />
+        <title>{props.node.name}</title>
         <text
-          x={90}
-          y={45}
+          x={nodeWidth / 2}
+          y={nodeHeight / 2 + middleAlignmentShift}
           textAnchor="middle"
           alignmentBaseline="baseline"
           style={{ fontWeight: 'bold' }}
@@ -79,10 +89,19 @@ function RenderNode(props: DependencyGraphTypes.RenderNodeProps<any>) {
   }
 
   const ref = parseEntityRef(props.node.id);
+  const nameChunks = splitNameInChunks(props.node.name);
+  const objs = prepareForDisplay(nameChunks);
 
   return (
     <g>
-      <rect width={180} height={80} rx={20} className={classes.groupNode} />
+      <rect
+        width={nodeWidth}
+        height={nodeHeight}
+        rx={nodeCornerRadius}
+        className={classes.groupNode}
+      />
+      <title>{props.node.name}</title>
+
       <Link
         to={catalogEntityRoute({
           kind: ref.kind,
@@ -91,17 +110,83 @@ function RenderNode(props: DependencyGraphTypes.RenderNodeProps<any>) {
         })}
       >
         <text
-          x={90}
-          y={45}
+          x={nodeWidth / 2}
+          y={nodeHeight / 2 + middleAlignmentShift}
           textAnchor="middle"
           alignmentBaseline="baseline"
-          style={{ fontWeight: 'bold' }}
+          style={{ fontWeight: 'bold', fontSize: textFontSize }}
         >
-          {props.node.name}
+          {objs.map(function (object: any, i: number) {
+            return (
+              <tspan
+                y={nodeHeight / 2 + middleAlignmentShift}
+                x="90"
+                textAnchor="middle"
+                dy={object.dy}
+              >
+                {object.text}
+              </tspan>
+            );
+          })}
         </text>
       </Link>
     </g>
   );
+}
+
+/**
+ *
+ * @param chunkedArray
+ * @returns
+ */
+function prepareForDisplay(chunkedArray: any): any {
+  return chunkedArray.map((val: Array<string>, pos: number) => {
+    const text = val.join(' ');
+
+    // If array length == 1, dy should be 0 since there is no need to handle the blocks inside the node
+    const dy = chunkedArray.length === 1 ? 0 : getDy(pos) - 30;
+    return { dy: dy, text: `${text}` };
+  });
+}
+
+/**
+ * text svg dy shifting based on array pos and in the blocks inside the node
+ */
+function getDy(i: number) {
+  const blocksSize = nodeHeight / maxLinesPerNode;
+  const position = 0 + blocksSize * i;
+  return position;
+}
+
+/**
+ * Create Chunked name based on maxLinesPerNode and maxWordsPerRow
+ * @param name from props.node.name
+ * @returns
+ */
+function splitNameInChunks(name: string) {
+  const array = name.split(' ');
+  const formated = array
+    .slice(0, maxLinesPerNode * maxWordsPerRow)
+    .map((it, pos) =>
+      pos + 1 === maxLinesPerNode * maxWordsPerRow ? `${it}...` : it,
+    );
+  const chunked = chunkArray(formated, maxWordsPerRow);
+  return chunked;
+}
+
+/**
+ * Returns an array with arrays of the given size.
+ *
+ * @param arr {Array} Array to split
+ * @param size {Integer} Size of each group
+ */
+function chunkArray(arr: Array<any>, size: number) {
+  const results = [];
+
+  while (arr.length) {
+    results.push(arr.splice(0, size));
+  }
+  return results;
 }
 
 /**
